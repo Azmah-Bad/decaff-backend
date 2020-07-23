@@ -5,6 +5,12 @@
             "driver": "SQLite",
             "name": "database",
             "previewLimit": 50
+        },
+        {
+            "database": "${workspaceFolder:decaff-backend}/database.db",
+            "driver": "SQLite",
+            "name": "instance",
+            "previewLimit": 50
         }
     ],
     "sqltools.useNodeRuntime": true

@@ -8,11 +8,13 @@ const KEYS = ['intakesID', 'userID', 'caffeine', 'TIME'];
 var OPID = 0;
 
 // open the database
-let db = new sqlite3.Database('instance.db', sqlite3.OPEN_READWRITE, (err) => {
+let db = new sqlite3.Database('database.db', sqlite3.OPEN_READWRITE, (err) => {
   if (err) {
     console.error(err.message);
   } else {
     console.log('Connected to the database. 🎉');
+    
+    updateOPID(db);
 
   }
 });
@@ -46,7 +48,7 @@ router.post('/userID/:userID/caffeine/:caffeine/TIME/:TIME', function (req, res,
 
 
 function insertInDB(db, dic) {
-  db.run(` INSERT INTO intakes (intakeID, userID, caffeine, TIME)
+  db.run(` INSERT INTO intakes (intakesID, userID, caffeine, TIME)
   VALUES (
       ${dic[0]},
       '${dic[1]}',
@@ -68,9 +70,53 @@ function insertInDB(db, dic) {
  * TODO :: looks in db for the user's caffeine intake in that last 24h and sends it back
  * @params : userId string unique for every user
  */
-router.get('/user/:userId', (req, res) => {
+router.get('/userID/:userID', (req, res) => {
+  let userID = req.params['userID']; // get userID
+  let sql = `SELECT * FROM intakes 
+  WHERE (TIME > date('now','-1 day') and userID = ${userID})` // sql cmd to look for the user intakes in the last 24h
+
+  db.all(sql, (err, rows) => {
+    if (err) {
+        console.error(err);
+    } else {
+      console.debug("rows.length: " + rows.length);
+      let caffeine = 0; // caffeine intake in last 24h
+      rows.forEach((row) => {
+        caffeine += row.caffeine;
+      })
+
+      res.json(
+        {
+          "userID": userID,
+          "isHealthy": true,
+          "intakesInLast24h": rows.length,
+          "caffeineInLast24h": caffeine
+        }
+      )
+    }
+  })
+
+
   
 })
+
+/**
+ * looks for the last OPID and update the runtime OPID accrodingly
+ */
+function updateOPID(db) {
+  let sql = 'SELECT intakesID\
+  FROM intakes\
+  WHERE intakesID=(SELECT MAX(intakesID)  FROM intakes)'
+  db.get(sql, (err, row) => {
+    if(err){
+      console.error(err);
+    } else {
+      OPID = row.intakesID + 1;
+      console.log("OPID updated, new OPID: " + OPID);
+    }
+
+  })
+}
 
 module.exports = router;
 
