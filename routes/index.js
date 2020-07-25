@@ -28,7 +28,7 @@ router.get('/', function(req, res, next) {
 });
 
 /**
- * TODO :: post a new intake format the incoming data and put it on the db 
+ * post a new intake format the incoming data and put it on the db 
  * @params : userId string unique for every user
  * @param : intake : Number of caffeine that has been taken by the user
  */
@@ -59,7 +59,7 @@ function insertInDB(db, dic) {
       return console.log(err.message);
     } else {
       // get the last insert id
-      console.log(`A row has been inserted with rowid ${this.lastID}`);
+      console.log(`[DATABASE] data saved from user ${dic[1]} of ${dic[2]}mg at ${dic[3]}`);
     }
     });
 ;
@@ -67,11 +67,11 @@ function insertInDB(db, dic) {
 
 
 /**
- * TODO :: looks in db for the user's caffeine intake in that last 24h and sends it back
+ * looks in db for the user's caffeine intake in that last 24h and sends it back
  * @params : userId string unique for every user
  */
 router.get('/userID/:userID', (req, res) => {
-  let userID = req.params['userID']; // get userID
+  let userID = +req.params['userID']; // get userID
   let sql = `SELECT * FROM intakes 
   WHERE (TIME > date('now','-1 day') and userID = ${userID})` // sql cmd to look for the user intakes in the last 24h
 
@@ -79,17 +79,23 @@ router.get('/userID/:userID', (req, res) => {
     if (err) {
         console.error(err);
     } else {
-      console.debug("rows.length: " + rows.length);
+      // console.debug("rows.length: " + rows.length);
       let caffeine = 0; // caffeine intake in last 24h
+      let numIntakes = 0;
       rows.forEach((row) => {
-        caffeine += row.caffeine;
+        let intakeTime = (new Date(row.TIME));
+        let now = (new Date())
+        if (intakeTime.getHours > now.getHours || intakeTime.getDay() == now.getDay()) {
+          caffeine += row.caffeine;
+          numIntakes++;
+        }
       })
-
+      console.log(`[GET_CAFFEINE_24H] ${userID} used ${caffeine} in last 24h`);
       res.json(
         {
           "userID": userID,
-          "isHealthy": true,
-          "intakesInLast24h": rows.length,
+          "isHealthy": isHealthy(caffeine),
+          "intakesInLast24h": numIntakes,
           "caffeineInLast24h": caffeine
         }
       )
@@ -116,6 +122,19 @@ function updateOPID(db) {
     }
 
   })
+}
+
+
+/**
+ * tells weather the consumption is health or not
+ * ressource http://sleepeducation.org/news/2013/08/01/sleep-and-caffeine
+ * @param {number} caffeine 
+ */
+function isHealthy(caffeine) {
+  if (caffeine > 300) {
+    return false
+  }
+  return true
 }
 
 module.exports = router;

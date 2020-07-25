@@ -1,4 +1,4 @@
-# POST http://localhost:3000/api/userID/420/caffeine/22/TIME/2020-07-23%2021:00:00
+# POST http://localhost:3000/api/userID/420/caffeine/64/TIME/2020-07-23%2021:00:00
 
 
 GET http://localhost:3000/api/userID/420
