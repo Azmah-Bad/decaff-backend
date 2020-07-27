@@ -46,10 +46,11 @@ router.get('/history/:userID', (req, res) => {
     } else {
       var dic = {}
       rows.forEach((row) => {
-        if (dic[(new Date(row.TIME)).getDay()] === undefined) {
-          dic[(new Date(row.TIME)).getDay()] = row.caffeine;
+        let rowDate = (new Date(row.TIME)).getDay()
+        if (dic[rowDate] === undefined) {
+          dic[rowDate] = row.caffeine;
         } else {
-          dic[(new Date(row.TIME)).getDay()]+= row.caffeine;
+          dic[rowDate]+= row.caffeine;
         }
       })
       
@@ -57,13 +58,14 @@ router.get('/history/:userID', (req, res) => {
       for (let i = 0; i < 8; i++){
         resp[i] = dic[i] || 0;
       }
-      resp.shift();
+      resp.pop();
       var tmp = [];
       resp.forEach((value) => { tmp.push(value);})
-      for (let index = 7; index == 0; index--){
-        resp[index] = tmp[index + today - 1]
+      for (let index = 0; index < resp.length; index++){
+        resp[(index + today + 2) % resp.length] = tmp[index];
+        // console.log((index + resp.length - today) % resp.length)
       }
-      resp.reverse();
+      // resp.reverse();
 
       res.json(
         {

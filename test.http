@@ -10,3 +10,7 @@ GET http://localhost:3000/api/history/420
 
 ###
 GET http://localhost:3000/api/history/2488
+
+
+###
+POST http://localhost:3000/api/userID/2488/caffeine/22/TIME/2020-07-25%2021:00:00
