@@ -28,6 +28,58 @@ router.get('/', function(req, res, next) {
 });
 
 /**
+ * send history over the last 7 days of caffeine intake
+ */
+router.get('/history/:userID', (req, res) => {
+  let userID = req.params[KEYS[1]];
+  console.log(`[${new Date().toTimeString()}] user ${userID} requested his history`);
+  let sql = `SELECT *
+  from intakes
+  where userID=${userID} 
+  and TIME > date('now','-7 days')`
+  let resp = [0, 0, 0, 0, 0, 0, 0];
+
+  db.all(sql, (err,rows) => {
+    if (err) {
+      console.error(err);
+      res.status(505).send("error on sql cmd");
+    } else {
+      var dic = {}
+      rows.forEach((row) => {
+        if (dic[(new Date(row.TIME)).getDay()] === undefined) {
+          dic[(new Date(row.TIME)).getDay()] = row.caffeine;
+        } else {
+          dic[(new Date(row.TIME)).getDay()]+= row.caffeine;
+        }
+      })
+      
+      let today = (new Date()).getDay();
+      for (let i = 0; i < 8; i++){
+        resp[i] = dic[i] || 0;
+      }
+      resp.shift();
+      var tmp = [];
+      resp.forEach((value) => { tmp.push(value);})
+      for (let index = 7; index == 0; index--){
+        resp[index] = tmp[index + today - 1]
+      }
+      resp.reverse();
+
+      res.json(
+        {
+          "userID": userID,
+          "data": resp
+
+        })
+
+
+
+
+    }
+  })
+})
+
+/**
  * post a new intake format the incoming data and put it on the db 
  * @params : userId string unique for every user
  * @param : intake : Number of caffeine that has been taken by the user
@@ -59,7 +111,7 @@ function insertInDB(db, dic) {
       return console.log(err.message);
     } else {
       // get the last insert id
-      console.log(`[DATABASE] data saved from user ${dic[1]} of ${dic[2]}mg at ${dic[3]}`);
+      console.log(`[${new Date().toTimeString()}]DATABASE: data saved from user ${dic[1]} of ${dic[2]}mg at ${dic[3]}`);
     }
     });
 ;
@@ -90,7 +142,7 @@ router.get('/userID/:userID', (req, res) => {
           numIntakes++;
         }
       })
-      console.log(`[GET_CAFFEINE_24H] ${userID} used ${caffeine} in last 24h`);
+      console.log(`[${new Date().toTimeString()}]GET_CAFFEINE_24H ${userID} used ${caffeine} in last 24h`);
       res.json(
         {
           "userID": userID,
